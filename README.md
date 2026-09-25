@@ -51,7 +51,7 @@ MySQL database (:3306)            Elasticsearch searcher (:9200)
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/customer-crud.git
+git clone https://github.com/ellysinday5/customer-crud.git
 cd customer-crud
 ```
 
