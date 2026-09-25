@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'elasticsearch' => [
+        'url'   => env('ELASTICSEARCH_URL', 'http://searcher:9200'),
+        'index' => env('ELASTICSEARCH_INDEX', 'customers'),
+    ],
+
 ];
