@@ -1,0 +1,381 @@
+<!-- Top Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark py-3 mb-4" style="background: linear-gradient(135deg, #1565C0 0%, #1976D2 60%, #2196F3 100%); box-shadow: 0 4px 20px rgba(21,101,192,0.25);">
+  <div class="container-fluid px-4">
+    <div class="d-flex align-items-center">
+      <div class="navbar-brand-icon me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 10px; backdrop-filter: blur(4px);">
+        <i class="bi bi-people-fill fs-5 text-white"></i>
+      </div>
+      <div>
+        <span class="fw-bold fs-5 text-white">Customer CRM</span>
+      </div>
+    </div>
+
+    <div class="d-flex align-items-center gap-3">
+      <span class="badge px-3 py-2 rounded-pill d-none d-md-inline-flex align-items-center gap-1" style="background: rgba(255,255,255,0.18); color: #fff; font-size: 0.82rem; border: 1px solid rgba(255,255,255,0.25);">
+        <i class="bi bi-person-lines-fill me-1"></i>{{ customers.length }} {{ customers.length === 1 ? 'Customer' : 'Customers' }}
+      </span>
+      <button id="btn-add-customer" class="btn btn-white-outline px-4 py-2 fw-semibold d-flex align-items-center gap-2" (click)="openCreateModal()">
+        <i class="bi bi-plus-circle-fill"></i>
+        <span>Add Customer</span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- Main Container -->
+<div class="container-fluid px-4 pb-5">
+
+  <!-- Header & Search Bar Card -->
+  <div class="glass-card p-4 mb-4">
+    <div class="row g-3 align-items-center justify-content-between">
+      <div class="col-md-5">
+        <h2 class="h4 fw-bold mb-1 text-dark">Customer Directory</h2>
+        <p class="text-muted small mb-0">Search, view, create, and manage all your customer records.</p>
+      </div>
+
+      <div class="col-md-7">
+        <div class="d-flex gap-2">
+          <div class="input-group search-input-group flex-grow-1">
+            <span class="input-group-text bg-white border-end-0 text-muted rounded-start-pill" style="border-radius: 50px 0 0 50px !important;">
+              <i class="bi bi-search"></i>
+            </span>
+            <input
+              type="text"
+              class="form-control border-start-0 border-end-0 ps-0"
+              style="border-radius: 0;"
+              placeholder="Search by name, email, or contact number..."
+              [(ngModel)]="searchQuery"
+              (ngModelChange)="onSearchChange()"
+            />
+            <button
+              *ngIf="searchQuery"
+              class="btn btn-outline-secondary border-start-0"
+              style="border-radius: 0 50px 50px 0 !important;"
+              type="button"
+              (click)="searchQuery = ''; loadCustomers()"
+              title="Clear search"
+            >
+              <i class="bi bi-x-lg"></i>
+            </button>
+            <span
+              *ngIf="!searchQuery"
+              class="input-group-text bg-white text-muted"
+              style="border-radius: 0 50px 50px 0 !important;"
+            ></span>
+          </div>
+
+          <button
+            class="btn btn-refresh d-flex align-items-center gap-1 px-3 rounded-pill"
+            (click)="loadCustomers()"
+            [disabled]="isLoading"
+            title="Reload from database"
+          >
+            <i class="bi bi-arrow-clockwise" [class.spin-animation]="isLoading"></i>
+            <span class="d-none d-sm-inline">Refresh</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="text-center py-5 glass-card">
+    <div class="spinner-border mb-3" role="status" style="width: 3rem; height: 3rem; color: #1976D2;">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <div class="text-muted fw-semibold">Fetching customer records...</div>
+  </div>
+
+  <!-- Customers Table -->
+  <div *ngIf="!isLoading && filteredCustomers.length > 0" class="glass-card" style="overflow: visible;">
+    <div class="table-responsive" style="overflow: visible;">
+      <table class="table table-hover align-middle mb-0">
+        <thead style="background: #f0f7ff;">
+          <tr>
+            <th class="ps-4 py-3 text-uppercase fw-semibold small" style="color: #1565C0; letter-spacing: 0.05em;">Customer</th>
+            <th class="py-3 text-uppercase fw-semibold small" style="color: #1565C0; letter-spacing: 0.05em;">Email Address</th>
+            <th class="py-3 text-uppercase fw-semibold small" style="color: #1565C0; letter-spacing: 0.05em;">Contact Number</th>
+            <th class="text-end pe-4 py-3 text-uppercase fw-semibold small" style="color: #1565C0; letter-spacing: 0.05em;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let customer of filteredCustomers; trackBy: trackById">
+            <td class="ps-4 py-3">
+              <div class="d-flex align-items-center">
+                <div class="avatar-initials me-3">
+                  {{ getInitials(customer.first_name, customer.last_name) }}
+                </div>
+                <div>
+                  <div class="fw-bold text-dark fs-6">
+                    {{ customer.first_name }} {{ customer.last_name }}
+                  </div>
+                  <div class="text-muted small">
+                    <span class="badge bg-light text-secondary border">ID: #{{ customer.id }}</span>
+                  </div>
+                </div>
+              </div>
+            </td>
+
+            <td class="py-3">
+              <div class="d-flex align-items-center text-muted">
+                <i class="bi bi-envelope-at me-2" style="color: #1976D2;"></i>
+                <a [href]="'mailto:' + customer.email" class="text-decoration-none text-dark table-link">
+                  {{ customer.email }}
+                </a>
+              </div>
+            </td>
+
+            <td class="py-3">
+              <span class="contact-badge px-3 py-2 rounded-pill font-monospace small">
+                <i class="bi bi-telephone-fill me-1"></i>{{ customer.contact_number }}
+              </span>
+            </td>
+
+            <td class="text-end pe-4 py-3">
+              <!-- Angular-controlled 3-Dot Dropdown -->
+              <div class="action-dropdown-wrap" (click)="$event.stopPropagation()">
+                <button
+                  class="btn-dots"
+                  type="button"
+                  (click)="toggleDropdown(customer.id!)"
+                  title="Actions"
+                >
+                  <i class="bi bi-three-dots-vertical"></i>
+                </button>
+                <ul *ngIf="openDropdownId === customer.id" class="actions-dropdown shadow">
+                  <li>
+                    <button class="dropdown-item action-view d-flex align-items-center gap-2" (click)="openViewModal(customer); closeDropdown()">
+                      <span class="action-icon view-icon"><i class="bi bi-eye-fill"></i></span>
+                      View Details
+                    </button>
+                  </li>
+                  <li>
+                    <button class="dropdown-item action-edit d-flex align-items-center gap-2" (click)="openEditModal(customer); closeDropdown()">
+                      <span class="action-icon edit-icon"><i class="bi bi-pencil-square"></i></span>
+                      Edit Customer
+                    </button>
+                  </li>
+                  <li><hr class="dropdown-divider mx-3 my-1"></li>
+                  <li>
+                    <button class="dropdown-item action-delete d-flex align-items-center gap-2" (click)="openDeleteModal(customer); closeDropdown()">
+                      <span class="action-icon delete-icon"><i class="bi bi-trash3-fill"></i></span>
+                      Delete
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Table Footer Count -->
+    <div class="px-4 py-3 border-top text-muted small d-flex justify-content-between align-items-center" style="background: #f8fafc;">
+      <span>Showing <strong style="color: #1565C0;">{{ filteredCustomers.length }}</strong> of <strong style="color: #1565C0;">{{ customers.length }}</strong> records</span>
+      <span *ngIf="searchQuery" class="fst-italic text-primary">Filtered by "{{ searchQuery }}"</span>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && filteredCustomers.length === 0" class="glass-card text-center py-5 px-3">
+    <div class="mb-3" style="color: #90CAF9;">
+      <i class="bi bi-people display-3 opacity-60"></i>
+    </div>
+
+    <ng-container *ngIf="searchQuery; else noDataAtAll">
+      <h3 class="h5 fw-bold text-dark">No customers match your search</h3>
+      <p class="text-muted small mb-3">We couldn't find any results for "<strong>{{ searchQuery }}</strong>".</p>
+      <button class="btn btn-outline-primary rounded-pill px-4" (click)="searchQuery = ''; loadCustomers()">
+        <i class="bi bi-x-circle me-1"></i>Clear Filter
+      </button>
+    </ng-container>
+
+    <ng-template #noDataAtAll>
+      <h3 class="h5 fw-bold text-dark">No customer records found</h3>
+      <p class="text-muted small mb-3">Get started by creating your very first customer record.</p>
+      <button class="btn btn-primary rounded-pill px-5 py-2 fw-semibold" (click)="openCreateModal()">
+        <i class="bi bi-plus-lg me-1"></i>Add First Customer
+      </button>
+    </ng-template>
+  </div>
+</div>
+
+
+<div *ngIf="showFormModal" class="modal-backdrop-custom" (click)="closeModals()">
+  <div class="modal-dialog-custom" (click)="$event.stopPropagation()">
+    <div class="modal-header-custom px-4 pt-4 pb-3 border-bottom d-flex justify-content-between align-items-center">
+      <h5 class="modal-title fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+        <span class="modal-icon" [style.background]="formMode === 'create' ? '#E3F2FD' : '#FFF8E1'">
+          <i class="bi" [ngClass]="formMode === 'create' ? 'bi-person-plus-fill text-primary' : 'bi-pencil-square text-warning'"></i>
+        </span>
+        {{ formMode === 'create' ? 'Add New Customer' : 'Edit Customer' }}
+      </h5>
+      <button type="button" class="btn-close" (click)="closeModals()"></button>
+    </div>
+
+    <form (ngSubmit)="requestSave()">
+      <div class="modal-body px-4 py-3">
+        <div class="mb-3">
+          <label class="form-label fw-semibold small text-dark">First Name <span class="text-danger">*</span></label>
+          <input type="text" class="form-control form-control-custom" [class.is-invalid]="formErrors['first_name']"
+            [(ngModel)]="formData.first_name" name="first_name" placeholder="e.g. Juan" required />
+          <div *ngIf="formErrors['first_name']" class="invalid-feedback">{{ formErrors['first_name'] }}</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold small text-dark">Last Name <span class="text-danger">*</span></label>
+          <input type="text" class="form-control form-control-custom" [class.is-invalid]="formErrors['last_name']"
+            [(ngModel)]="formData.last_name" name="last_name" placeholder="e.g. Dela Cruz" required />
+          <div *ngIf="formErrors['last_name']" class="invalid-feedback">{{ formErrors['last_name'] }}</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold small text-dark">Email Address <span class="text-danger">*</span></label>
+          <input type="email" class="form-control form-control-custom" [class.is-invalid]="formErrors['email']"
+            [(ngModel)]="formData.email" name="email" placeholder="e.g. juan@example.com" required />
+          <div *ngIf="formErrors['email']" class="invalid-feedback">{{ formErrors['email'] }}</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold small text-dark">Contact Number <span class="text-danger">*</span></label>
+          <input type="text" class="form-control form-control-custom" [class.is-invalid]="formErrors['contact_number']"
+            [(ngModel)]="formData.contact_number" name="contact_number" placeholder="e.g. 09171234567" required />
+          <div *ngIf="formErrors['contact_number']" class="invalid-feedback">{{ formErrors['contact_number'] }}</div>
+        </div>
+      </div>
+
+      <div class="modal-footer px-4 py-3 border-top d-flex justify-content-end gap-2" style="background: #f8fafc;">
+        <button type="button" class="btn btn-light border rounded-pill px-4" (click)="closeModals()" [disabled]="isSaving">Cancel</button>
+        <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold d-flex align-items-center gap-2" [disabled]="isSaving">
+          <span *ngIf="isSaving" class="spinner-border spinner-border-sm"></span>
+          <span>{{ formMode === 'create' ? 'Create Customer' : 'Review &amp; Save' }}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div *ngIf="showConfirmSaveModal" class="modal-backdrop-custom" (click)="closeModals()">
+  <div class="modal-dialog-custom" style="max-width: 460px;" (click)="$event.stopPropagation()">
+    <div class="modal-body px-4 py-5 text-center">
+      <div class="confirm-icon-wrap mx-auto mb-3" style="background: #E3F2FD;">
+        <i class="bi bi-pencil-square fs-3" style="color: #1565C0;"></i>
+      </div>
+      <h5 class="fw-bold text-dark mb-2">Confirm Changes</h5>
+      <p class="text-muted small mb-3">You are about to update the following record:</p>
+      <div class="rounded-3 border px-4 py-3 mb-1 text-start" style="background: #f8fafc;">
+        <div class="mb-2">
+          <span class="text-muted small">Name</span>
+          <div class="fw-semibold text-dark">{{ formData.first_name }} {{ formData.last_name }}</div>
+        </div>
+        <div class="mb-2">
+          <span class="text-muted small">Email</span>
+          <div class="fw-semibold text-dark">{{ formData.email }}</div>
+        </div>
+        <div>
+          <span class="text-muted small">Contact</span>
+          <div class="fw-semibold text-dark">{{ formData.contact_number }}</div>
+        </div>
+      </div>
+      <p class="text-muted small mt-3 mb-0">Are you sure you want to save these changes?</p>
+    </div>
+    <div class="modal-footer px-4 py-3 border-top d-flex justify-content-center gap-2" style="background: #f8fafc;">
+      <button type="button" class="btn btn-light border rounded-pill px-4" (click)="backToForm()" [disabled]="isSaving">
+        <i class="bi bi-arrow-left me-1"></i>Back to Form
+      </button>
+      <button type="button" class="btn btn-primary rounded-pill px-4 fw-semibold d-flex align-items-center gap-2" (click)="executeSave()" [disabled]="isSaving">
+        <span *ngIf="isSaving" class="spinner-border spinner-border-sm"></span>
+        <span>Yes, Save Changes</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ================== MODAL: View Customer ================== -->
+<div *ngIf="showViewModal && selectedCustomer" class="modal-backdrop-custom" (click)="closeModals()">
+  <div class="modal-dialog-custom" (click)="$event.stopPropagation()">
+    <div class="modal-header-custom px-4 pt-4 pb-3 border-bottom d-flex justify-content-between align-items-center">
+      <h5 class="modal-title fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+        <span class="modal-icon" style="background: #E3F2FD;">
+          <i class="bi bi-person-badge-fill text-primary"></i>
+        </span>
+        Customer Profile
+      </h5>
+      <button type="button" class="btn-close" (click)="closeModals()"></button>
+    </div>
+
+    <div class="modal-body px-4 py-4 text-center">
+      <div class="avatar-initials mx-auto mb-3" style="width: 64px; height: 64px; font-size: 1.4rem;">
+        {{ getInitials(selectedCustomer.first_name, selectedCustomer.last_name) }}
+      </div>
+      <h4 class="fw-bold text-dark mb-1">{{ selectedCustomer.first_name }} {{ selectedCustomer.last_name }}</h4>
+      <span class="badge rounded-pill mb-4 px-3 py-1" style="background: #E3F2FD; color: #1565C0;">
+        Customer ID #{{ selectedCustomer.id }}
+      </span>
+
+      <div class="rounded-3 text-start p-3 border" style="background: #f8fafc;">
+        <div class="row g-3">
+          <div class="col-12 border-bottom pb-2">
+            <span class="text-muted small d-block mb-1">Email Address</span>
+            <span class="fw-semibold text-dark"><i class="bi bi-envelope me-2" style="color:#1976D2;"></i>{{ selectedCustomer.email }}</span>
+          </div>
+          <div class="col-12 border-bottom pb-2">
+            <span class="text-muted small d-block mb-1">Contact Number</span>
+            <span class="fw-semibold text-dark"><i class="bi bi-telephone me-2" style="color:#1976D2;"></i>{{ selectedCustomer.contact_number }}</span>
+          </div>
+          <div class="col-6" *ngIf="selectedCustomer.created_at">
+            <span class="text-muted small d-block mb-1">Created At</span>
+            <span class="small text-secondary">{{ selectedCustomer.created_at | date:'medium' }}</span>
+          </div>
+          <div class="col-6" *ngIf="selectedCustomer.updated_at">
+            <span class="text-muted small d-block mb-1">Last Updated</span>
+            <span class="small text-secondary">{{ selectedCustomer.updated_at | date:'medium' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer px-4 py-3 border-top d-flex justify-content-between" style="background: #f8fafc;">
+      <button type="button" class="btn btn-outline-primary rounded-pill px-4" (click)="openEditModal(selectedCustomer)">
+        <i class="bi bi-pencil-square me-1"></i>Edit Customer
+      </button>
+      <button type="button" class="btn btn-primary rounded-pill px-4" (click)="closeModals()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================== MODAL: Delete Confirmation ================== -->
+<div *ngIf="showDeleteModal && customerToDelete" class="modal-backdrop-custom" (click)="closeModals()">
+  <div class="modal-dialog-custom" style="max-width: 420px;" (click)="$event.stopPropagation()">
+    <div class="modal-body px-4 py-5 text-center">
+      <div class="delete-icon-wrap mx-auto mb-3">
+        <i class="bi bi-exclamation-triangle-fill fs-3 text-danger"></i>
+      </div>
+      <h5 class="fw-bold text-dark mb-2">Delete Customer?</h5>
+      <p class="text-muted small mb-0">
+        You are about to permanently delete
+        <strong class="text-dark">{{ customerToDelete.first_name }} {{ customerToDelete.last_name }}</strong>.
+        This action cannot be undone.
+      </p>
+    </div>
+    <div class="modal-footer px-4 py-3 border-top d-flex justify-content-center gap-2" style="background: #f8fafc;">
+      <button type="button" class="btn btn-light border rounded-pill px-4" (click)="closeModals()" [disabled]="isDeleting">Cancel</button>
+      <button type="button" class="btn btn-danger rounded-pill px-4 fw-semibold d-flex align-items-center gap-2" (click)="confirmDelete()" [disabled]="isDeleting">
+        <span *ngIf="isDeleting" class="spinner-border spinner-border-sm"></span>
+        <span>Yes, Delete</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ================== Floating Toast ================== -->
+<div *ngIf="toastMessage" class="toast-container-custom">
+  <div
+    class="toast-alert shadow-lg d-flex align-items-center gap-3 px-4 py-3 rounded-3"
+    [ngClass]="toastType === 'success' ? 'toast-success' : 'toast-danger'"
+    role="alert"
+  >
+    <i class="bi fs-5" [ngClass]="toastType === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-octagon-fill'"></i>
+    <div class="fw-semibold">{{ toastMessage }}</div>
+    <button type="button" class="btn-close ms-auto btn-close-white" (click)="toastMessage = null"></button>
+  </div>
+</div>
